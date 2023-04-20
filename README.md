@@ -1,2 +1,2 @@
 # kedarnath
-A HR management platform
+Backend for CMS and attendance management 

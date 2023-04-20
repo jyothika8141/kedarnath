@@ -17,6 +17,9 @@ class JWTAuthenticationMiddleware(object):
 
     @staticmethod
     def get_jwt_user(request):
+        user = get_user(request)
+        if user.is_authenticated:
+            return user
         jwt_authentication = JWTAuthentication()
         print("Getting jwt user")
         if jwt_authentication.get_header(request):

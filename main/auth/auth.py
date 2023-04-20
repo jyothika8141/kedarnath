@@ -13,7 +13,7 @@ def login(request):
     username = request.POST['username']
     password = request.POST['password']
     user = authenticate(request, username=username, password=password)
-    print("welcome back user" + user.username)
+    # print("welcome back user" + user.username)
     if user is not None:
         token_dict = get_jwt_with_user(user)
         response = JsonResponse({"status": 200, "data": {"message": "success"}})

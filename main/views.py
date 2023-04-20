@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from main.models import Attendance, LeaveRequest
+from main.models import Attendance, LeaveRequest, Profile
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datetime import date
@@ -14,6 +14,7 @@ def check_in(request):
         user = request.user
         print(user)
         req = request.POST
+        print(req)
         check_in_message = req["check_in_message"]
         attendance = Attendance.objects.create(user=user, check_in_message=check_in_message)
         return JsonResponse({"status": 200, "data": attendance.to_dict()})
@@ -76,3 +77,40 @@ def get_leave_requests(request):
         return JsonResponse({"status": 200, "data": []})
     leave_requests = [leave_request.to_dict() for leave_request in leave_requests]
     return JsonResponse({"status": 200, "data": leave_requests})
+
+
+@csrf_exempt
+def me(request):
+    user = request.user
+    return JsonResponse({"status": 200, "data": {"username": user.username, "email": user.email, "first_name": user.first_name, "last_name": user.last_name}})
+
+
+@csrf_exempt
+def edit_profile(request):
+    user = request.user
+    res = json.loads(request.body)
+    user_profile = Profile.objects.filter(user=user)
+    if "phone" in res:
+        user_profile.phone = res["phone"]
+    if "address" in res:
+        user_profile.address = res["address"]
+    if "city" in res:
+        user_profile.city = res["city"]
+    if "state" in res:
+        user_profile.state = res["state"]
+    if "country" in res:
+        user_profile.country = res["country"]
+    if "pincode" in res:
+        user_profile.pincode = res["pincode"]
+    user_profile.save()
+
+    return JsonResponse({"status": 200, "data": user_profile.to_dict()})
+
+
+@csrf_exempt
+def get_profile(request):
+    user = request.user
+    user_profile = Profile.objects.get(user=user)
+    attendance = Attendance.objects.filter(user=user).order_by("-created_at")[0:7]
+
+    return JsonResponse({"status": 200, "data": user_profile.to_dict()})
