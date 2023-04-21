@@ -20,6 +20,7 @@ class Profile(models.Model):
     is_active = models.BooleanField(default=True)
     is_deleted = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+    allowed_locations = models.ManyToManyField("Location", blank=True)
 
     def to_dict(self):
         return {
@@ -37,12 +38,32 @@ class Profile(models.Model):
         }
 
 
+class Location(models.Model):
+    id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=50)
+    address = models.CharField(max_length=500, null=True, blank=True)
+    city = models.CharField(max_length=50, null=True, blank=True)
+    state = models.CharField(max_length=50, null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, null=True, blank=True)
+
+    def to_dict(self):
+        return {
+            "id": self.id,
+            "name": self.name,
+            "address": self.address,
+            "city": self.city,
+            "state": self.state,
+        }
+
+
 class Attendance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     check_in = models.DateTimeField(auto_now_add=True)
     check_out = models.DateTimeField(null=True, blank=True)
     check_in_message = models.CharField(max_length=500, null=True, blank=True)
     check_out_message = models.CharField(max_length=500, null=True, blank=True)
+    location = models.ForeignKey(Location, on_delete=models.CASCADE, null=True, blank=True)
+    other_location = models.CharField(max_length=500, null=True, blank=True)
 
     def to_dict(self):
         return {

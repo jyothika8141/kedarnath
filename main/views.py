@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from main.models import Attendance, LeaveRequest, Profile
+from main.models import Attendance, LeaveRequest, Profile, Location
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datetime import date
@@ -9,14 +9,19 @@ from datetime import date
 
 @csrf_exempt
 def check_in(request):
-
     try:
         user = request.user
         print(user)
         req = request.POST
         print(req)
         check_in_message = req["check_in_message"]
-        attendance = Attendance.objects.create(user=user, check_in_message=check_in_message)
+        location_id = req["location_id"]
+        location = Location.objects.get(id=location_id)
+        if location.name == "others":
+            other_location = req["other_location"]
+            attendance = Attendance.objects.create(user=user, check_in_message=check_in_message, other_location=other_location)
+        else:
+            attendance = Attendance.objects.create(user=user, check_in_message=check_in_message, location=location)
         return JsonResponse({"status": 200, "data": attendance.to_dict()})
     except Exception as e:
         print(e)
@@ -47,7 +52,9 @@ def check_attendance(request):
     print(attendance.check_in.date())
     print(date.today())
     if attendance is None or attendance.check_in.date() != date.today():
-        return JsonResponse({"status": 200, "data": None})
+        locations = Profile.objects.get(user=user).allowed_locations.all()
+        locations = [location.to_dict() for location in locations]
+        return JsonResponse({"status": 200, "data": {"attendance": None, "locations": locations}})
     return JsonResponse({"status": 200, "data": attendance.to_dict()})
 
 
@@ -82,7 +89,9 @@ def get_leave_requests(request):
 @csrf_exempt
 def me(request):
     user = request.user
-    return JsonResponse({"status": 200, "data": {"username": user.username, "email": user.email, "first_name": user.first_name, "last_name": user.last_name}})
+    return JsonResponse({"status": 200,
+                         "data": {"username": user.username, "email": user.email, "first_name": user.first_name,
+                                  "last_name": user.last_name}})
 
 
 @csrf_exempt
@@ -111,6 +120,17 @@ def edit_profile(request):
 def get_profile(request):
     user = request.user
     user_profile = Profile.objects.get(user=user)
-    attendance = Attendance.objects.filter(user=user).order_by("-created_at")[0:7]
+    attendance = Attendance.objects.filter(user=user).order_by("-check_in")[0:7]
+    attendance = [attendance.to_dict() for attendance in attendance]
+    print(attendance)
+    graph_data = {"labels": [], "data": []}
+    for attendance in attendance:
+        print(attendance["check_in"], attendance["check_out"])
+        graph_data["labels"].append(attendance["check_in"].date())
+        try:
+            graph_data["data"].append(int(attendance["check_out"].hour - attendance["check_in"].hour))
+        except:
+            graph_data["data"].append(0)
+        print(graph_data)
+    return JsonResponse({"status": 200, "data": user_profile.to_dict(), "graph_data": graph_data})
 
-    return JsonResponse({"status": 200, "data": user_profile.to_dict()})
