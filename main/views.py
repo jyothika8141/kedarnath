@@ -5,6 +5,7 @@ from main.models import Attendance, LeaveRequest, Profile, Location
 from django.views.decorators.csrf import csrf_exempt
 from django.http import JsonResponse
 from datetime import date
+from django.contrib.auth.models import User
 
 
 @csrf_exempt
@@ -19,7 +20,7 @@ def check_in(request):
         location = Location.objects.get(id=location_id)
         if location.name == "others":
             other_location = req["other_location"]
-            attendance = Attendance.objects.create(user=user, check_in_message=check_in_message, other_location=other_location)
+            attendance = Attendance.objects.create(user=user, check_in_message=check_in_message, location=location, other_location=other_location)
         else:
             attendance = Attendance.objects.create(user=user, check_in_message=check_in_message, location=location)
         return JsonResponse({"status": 200, "data": attendance.to_dict()})
@@ -124,13 +125,33 @@ def get_profile(request):
     attendance = [attendance.to_dict() for attendance in attendance]
     print(attendance)
     graph_data = {"labels": [], "data": []}
+    hours_worked = 0
+
     for attendance in attendance:
         print(attendance["check_in"], attendance["check_out"])
         graph_data["labels"].append(attendance["check_in"].date())
         try:
             graph_data["data"].append(int(attendance["check_out"].hour - attendance["check_in"].hour))
+            hours_worked += int(attendance["check_out"].hour - attendance["check_in"].hour)
         except:
             graph_data["data"].append(0)
         print(graph_data)
-    return JsonResponse({"status": 200, "data": user_profile.to_dict(), "graph_data": graph_data})
+        avg_hours = hours_worked / len(graph_data["data"])
+        days_worked = len(graph_data["data"])
+    return JsonResponse({"status": 200, "data": user_profile.to_dict(), "graph_data": graph_data, "stats_data": {"hours_worked": hours_worked, "avg_hours": avg_hours, "days_worked": days_worked}})
+
+@csrf_exempt
+def admin_dashboard(request):
+    user = request.user
+    if user.is_superuser:
+        total_employees = User.objects.filter(is_superuser=False).count()
+        total_employees_present = Attendance.objects.filter(check_in__date=date.today()).count()
+        total_employees_absent = total_employees - total_employees_present
+        total_late_employee = Attendance.objects.filter(check_in__date=date.today(), check_in__hour__gte=10).count()
+        last_7_days_present = Attendance.objects.filter(check_in__date__gte=date.today() - datetime.timedelta(days=7)).count()
+        last_7_days_absent = total_employees * 7 - last_7_days_present
+        last_7_days_late = Attendance.objects.filter(check_in__date__gte=date.today() - datetime.timedelta(days=7), check_in__hour__gte=10).count()
+        return JsonResponse({"status": 200, "data": {"total_employees": total_employees, "total_employees_present": total_employees_present, "total_employees_absent": total_employees_absent, "total_late_employee": total_late_employee, "last_7_days_present": last_7_days_present, "last_7_days_absent": last_7_days_absent, "last_7_days_late": last_7_days_late}})
+
+    return JsonResponse({"status": 500, "message": "You are not authorized to access this page"})
 
