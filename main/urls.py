@@ -14,5 +14,10 @@ urlpatterns = [
     url(r'me/$', views.me, name='me'),
     # url(r'^signup/$', views.signup, name="signup"),
     url(r'^me/profile/edit/$', views.edit_profile, name="Edit Profile"),
-    url(r'^me/profile/get/$', views.get_profile, name="Get profile")
+    url(r'^me/profile/get/$', views.get_profile, name="Get profile"),
+    url(r'^locations/get/$', views.get_locations, name="Get locations"),
+    # url(r'^locations/add/$', views.add_location, name="Add location"),
+    # url(r'^locations/edit/$', views.edit_location, name="Edit location"),
+    # url(r'^locations/delete/$', views.delete_location, name="Delete location"),
+    # url(r'^location/get/$', views.get_location, name="Get location"),
 ]
