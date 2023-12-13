@@ -8,6 +8,8 @@ from datetime import date
 from django.contrib.auth.models import User
 
 
+
+
 @csrf_exempt
 def check_in(request):
     try:
@@ -176,3 +178,35 @@ def get_locations(request):
         locations = [location.to_dict() for location in locations]
         return JsonResponse({"status": 200, "data": locations})
     return JsonResponse({"status": 500, "message": "You are not authorized to access this page"})
+
+
+
+@csrf_exempt
+def create_profile(request):
+    try: 
+        user = request.user
+        res = json.loads(request.body)
+        print(res)
+        user = res["user"]
+        phone = res["phone"]
+        address = res["address"]
+        city = res["city"]
+        state = res["state"]
+        country = res["country"]
+        pincode = res["pincode"]
+        # profile = res.FILES["image"]
+        job_title = res["job_title"]
+        date_of_birth = res["date_of_birth"]
+        date_of_joining = res["date_of_joining"]
+        salary = res["salary"]
+
+        user = User.objects.create_user(username=user, email=user, password=user)
+        profiledata = Profile.objects.create(user=user, phone = phone, address=address, city = city, state  = state, country = country, pincode = pincode, job_title = job_title, date_of_birth = date_of_birth, date_of_joining = date_of_joining, salary = salary)
+        return JsonResponse({"status": 201, "data": profiledata.to_dict()}) 
+    except Exception as e:
+        print(e)
+        return JsonResponse({"status": 500, "message": "Profile creation unsuccessful"})
+    
+
+
+
