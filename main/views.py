@@ -8,8 +8,6 @@ from datetime import date
 from django.contrib.auth.models import User
 
 
-
-
 @csrf_exempt
 def check_in(request):
     try:
@@ -129,7 +127,8 @@ def get_profile(request):
     print(attendance)
     graph_data = {"labels": [], "data": []}
     hours_worked = 0
-
+    avg_hours = 0
+    days_worked = 0
     for attendance in attendance:
         print(attendance["check_in"], attendance["check_out"])
         graph_data["labels"].append(attendance["check_in"].date())
@@ -206,7 +205,20 @@ def create_profile(request):
     except Exception as e:
         print(e)
         return JsonResponse({"status": 500, "message": "Profile creation unsuccessful"})
-    
 
 
 
+@csrf_exempt
+def delete_profile(request):
+    try:
+        user = request.user
+        res = json.loads(request.body)
+        print(res)
+        user = res["user"]
+
+        user = User.objects.get(username=user)
+        user.delete()
+        return JsonResponse({"status": 200, "message": "Profile deleted successfully"})
+    except Exception as e:
+        print(e)
+        return JsonResponse({"status": 500, "message": "Profile deletion unsuccessful"})
