@@ -197,7 +197,10 @@ def create_profile(request):
         job_title = res["job_title"]
         date_of_birth = res["date_of_birth"]
         date_of_joining = res["date_of_joining"]
-        salary = res["salary"]
+        if "salary" in res:
+            salary = res["salary"]
+        else:
+            salary = None
 
         user = User.objects.create_user(username=user, email=user, password=user)
         profiledata = Profile.objects.create(user=user, phone = phone, address=address, city = city, state  = state, country = country, pincode = pincode, job_title = job_title, date_of_birth = date_of_birth, date_of_joining = date_of_joining, salary = salary)
